@@ -40,70 +40,49 @@ fn part_one(reports: &Vec<Vec<i32>>) -> Result<i32, Error> {
 }
 
 fn get_faulty_report(report: &Vec<i32>) -> HashSet<usize> {
+    
     let mut faulty_level: HashSet<usize> = HashSet::new();
     let mut diffs: Vec<i32> = Vec::new();
 
-    // let mut faulty_level_with_next: HashSet<usize> = HashSet::new();
-    // let mut faulty_level_with_prev: HashSet<usize> = HashSet::new();
-
-    let mut increasing_level: HashSet<usize> = HashSet::new();
-    let mut decreasing_level: HashSet<usize> = HashSet::new();
-
-    // let mut increasing_level_with_next: HashSet<usize> = HashSet::new();
-    // let mut decreasing_level_with_next: HashSet<usize> = HashSet::new();
-    // let mut increasing_level_with_prev: HashSet<usize> = HashSet::new();
-    // let mut decreasing_level_with_prev: HashSet<usize> = HashSet::new();
+    let mut sign_change: HashSet<usize> = HashSet::new();
 
     for (index, value) in report.iter().enumerate() {
         if index > 0 {
             let _level_diff = value - report[index - 1];
             diffs.push(_level_diff);
             if (_level_diff.abs() < 1) | (_level_diff.abs() > 3) {
-                faulty_level.insert(index - 1);
+                if index == report.len() - 1 {                    
+                    faulty_level.insert(index);
+                } else {                    
+                    faulty_level.insert(index - 1);
+                }
             }
         }
-
-        if index < report.len() - 1 {
-            if &report[index + 1] > value {
-                increasing_level.insert(index + 1);
-            } else {
-                decreasing_level.insert(index);
+    }
+    // println!("Diffs: {:?}", diffs);
+    for (index, diff) in diffs.iter().enumerate() {
+        if (index > 0) && (index < (diffs.len() - 1)) {
+            if (*diff < 0) && (diffs[index - 1] > 0) {
+                if index == 1 {
+                    sign_change.insert(0);
+                } else {
+                    sign_change.insert(index);
+                }
             }
-            // } else if index == 0 {
-            //     if &report[index + 1] > value {
-            //         increasing_level.insert(0);
-            //     } else {
-            //         decreasing_level.insert(0);
-            //     }
+        } else if index == (diffs.len() - 1) {            
+            if ((*diff < 0) && (diffs[index - 1] > 0)) || ((*diff > 0) && (diffs[index - 1] < 0)) {
+                sign_change.insert(diffs.len());
+            }
         }
     }
-    println!("{:?}", report);
-    println!("{:?}", diffs);
-    println!("{:?}", faulty_level);
-    println!("dec: {:?}", decreasing_level);
-    println!("inc: {:?}", increasing_level);
-    let all_one_direction: bool =
-        (decreasing_level.len() == report.len()) | (increasing_level.len() == report.len());
-
-    println!("{:?}", all_one_direction);
-
-    if (faulty_level.len() == 0) & all_one_direction {
-        return faulty_level;
-    } else if decreasing_level.len() > increasing_level.len() {
-        let result: HashSet<_> = faulty_level
-            .union(&increasing_level)
-            .into_iter()
-            .copied()
-            .collect();
-        return result;
-    } else {
-        let result: HashSet<_> = faulty_level
-            .union(&decreasing_level)
-            .into_iter()
-            .copied()
-            .collect();
-        return result;
-    }
+    // println!("Sig Change: {:?}", sign_change);
+    // println!("Faulty: {:?}", faulty_level);
+    let result: HashSet<_> = faulty_level
+        .union(&sign_change)
+        .into_iter()
+        .copied()
+        .collect();
+    return result;
 }
 
 fn part_two(reports: &Vec<Vec<i32>>) -> Result<i32, Error> {
@@ -169,5 +148,11 @@ mod tests {
 
         let report_02 = vec![78, 79, 82, 85, 88, 85];
         assert_eq!(get_faulty_report(&report_02), HashSet::from([5]));
+
+        let report_02 = vec![71, 67, 64, 63, 62, 64];
+        assert_eq!(get_faulty_report(&report_02), HashSet::from([0, 5]));
+
+        let report_02 = vec![89, 88, 85, 84, 82, 81, 79, 75];
+        assert_eq!(get_faulty_report(&report_02), HashSet::from([7]));
     }
 }

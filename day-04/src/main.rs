@@ -49,7 +49,7 @@ fn part_one(content: &Vec<Vec<char>>) -> Result<u16, Error> {
             
             let mut positions_to_check: Vec<[[u8; 2]; 4]> = Vec::new();
             
-            'direction_loop: for direction in possible_positions {
+            for direction in possible_positions {
                 let mut new_pos: [[u8; 2]; 4] = [[0; 2]; 4];
                 let mut finished = false;
                 
@@ -75,7 +75,7 @@ fn part_one(content: &Vec<Vec<char>>) -> Result<u16, Error> {
             println!("\nX:{} | Y:{}", x, y);
             // println!("{:?}", positions_to_check);
             
-            'position_check: for positions in positions_to_check {
+            for positions in positions_to_check {
                 let mut phrase: [char; 4] = ['.'; 4];
                 for (i, position) in positions.iter().enumerate() {
                     let pos_x = position[0] as usize;
@@ -102,27 +102,16 @@ fn part_one(content: &Vec<Vec<char>>) -> Result<u16, Error> {
 
 fn part_two(content: &Vec<Vec<char>>) -> Result<u16, Error> {
     let mut result: u16 = 0;
-        let possible_positions: [[[i16; 2]; 4]; 8] = [
+        let possible_positions: [[[i16; 2]; 3]; 2] = [
             [
-                [-1, -1], [0, 0], [2, 0], [3, 0]          // left-to-right
+                [-1, -1], [0, 0], [1, 1]
             ], [
-                [-3, 0], [-2, 0], [-1, 0], [0, 0]       // right-to-left
-            ], [
-                [0, 0], [0, -1], [0, -2], [0, -3]       // up-to-down
-            ], [
-                [0, 0], [0, 1], [0, 2], [0, 3]          // down-to-up
-            ], [
-                [0, 0], [1, 1], [2, 2], [3, 3]          // up-left-to-down-right
-            ], [
-                [0, 0], [-1, -1], [-2, -2], [-3, -3]    // down-right-to-up-left
-            ], [
-                [0, 0], [1, -1], [2, -2], [3, -3]       // down-left-to-up-right
-            ], [
-                [0, 0], [-1, 1], [-2, 2], [-3, 3]       // up-right-to-down-left
+                [1, -1], [0, 0], [-1, 1]
             ]
         ];
-        let match_phrase: [char; 4] = ['M', 'A', 'S'];
-        let match_phrase_rev: [char; 4] = [ 'S', 'A', 'M'];
+        
+        let match_phrase: [char; 3] = ['M', 'A', 'S'];
+        let match_phrase_rev: [char; 3] = [ 'S', 'A', 'M'];
         
         let max_y: i16 = content.len().try_into().unwrap();
         let mut max_x: i16;
@@ -135,11 +124,9 @@ fn part_two(content: &Vec<Vec<char>>) -> Result<u16, Error> {
                     continue;
                 }
                 
-                let mut positions_to_check: Vec<[[u8; 2]; 4]> = Vec::new();
-                
-                'direction_loop: for direction in possible_positions {
-                    let mut new_pos: [[u8; 2]; 4] = [[0; 2]; 4];
-                    let mut finished = false;
+                let mut positions_to_check: [[[i16; 2]; 3]; 2] = [[[-1; 2]; 3]; 2];                
+                for (j, direction) in possible_positions.iter().enumerate() {
+                    let mut new_pos: [[i16; 2]; 3] = [[-1; 2]; 3];
                     
                     for (i, pos) in direction.iter().enumerate() {
                         let new_x: i16 = (x as i16) + pos[0];
@@ -147,24 +134,26 @@ fn part_two(content: &Vec<Vec<char>>) -> Result<u16, Error> {
                         
                         if new_x < 0 || new_x >= max_x || new_y < 0 || new_y >= max_y {
                             break;
-                        }                    
-                        
-                        new_pos[i] = [new_x.try_into().unwrap(), new_y.try_into().unwrap()];
-                        if i == direction.len() - 1 {
-                            finished = true;
                         }
+                        new_pos[i] = [new_x.try_into().unwrap(), new_y.try_into().unwrap()];
                     }
-                    if finished {
-                        positions_to_check.push(new_pos.clone());
-                    }
-                    
+                    positions_to_check[j] = new_pos.clone();
+                }
+                // check if any value was set
+                let flattend_positions: Vec<[i16; 2]> = positions_to_check.into_iter().flatten().collect();
+                let flat_flattend_positions: Vec<i16> = flattend_positions.into_iter().flatten().collect();
+                // println!("{:?}",flat_flattend_positions);
+                if flat_flattend_positions.iter().filter(|&&x| x < 0).count() > 0 {
+                    // skip
+                    continue;
                 }
                 
                 println!("\nX:{} | Y:{}", x, y);
-                // println!("{:?}", positions_to_check);
+                println!("{:?}", positions_to_check);
+                let mut x_match: u8 = 0;
                 
-                'position_check: for positions in positions_to_check {
-                    let mut phrase: [char; 4] = ['.'; 4];
+                for positions in positions_to_check {
+                    let mut phrase: [char; 3] = ['.'; 3];
                     for (i, position) in positions.iter().enumerate() {
                         let pos_x = position[0] as usize;
                         let pos_y = position[1] as usize;
@@ -177,11 +166,15 @@ fn part_two(content: &Vec<Vec<char>>) -> Result<u16, Error> {
                     }
                     if (phrase == match_phrase) || (phrase == match_phrase_rev) {   
                         println!("{:?} -> {:?}", phrase, positions);                 
-                        result += 1;
+                        x_match += 1;
                     } else {                    
                         // println!("{:?} -> {:?}", positions, phrase);
                     }
-                }           
+                }
+                
+                if x_match == 2 {               
+                    result += 1;                    
+                }
             }
         }
     Ok(result)
@@ -192,8 +185,8 @@ fn main() {
     let res_p1: u16 = part_one(&content).unwrap();  
     println!("Result Part One: {}", res_p1);
 
-    // let res_p2: i32 = part_two(&content.as_str()).unwrap();
-    // println!("Result Part Two: {}", res_p2);
+    let res_p2: u16 = part_two(&content).unwrap();
+    println!("Result Part Two: {}", res_p2);
 }
 
 #[cfg(test)]
@@ -208,8 +201,7 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        // let content = read_input("./input/part_one_test_input.txt".to_string()).unwrap();
-        // println!("{}", content)
-        // assert_eq!(part_two(&input).unwrap(), 48);
+        let content = read_input("./input/part_one_test_input.txt".to_string()).unwrap();
+        assert_eq!(part_two(&content).unwrap(), 9);
     }
 }
